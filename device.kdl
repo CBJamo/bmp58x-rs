@@ -1,0 +1,382 @@
+device LowLevel {
+    default-byte-order LE
+    register-address-type u8
+    defmt-feature defmt
+
+    register AsicIdentificationId {
+        address 0x01
+        access RO
+        reset-value 0b0101000
+
+        fields size-bits=8 {
+            (uint)chip_id @7:0
+        }
+    }
+
+    register AsicRevisionId {
+        address 0x02
+        access RO
+        reset-value 0b00110010
+
+        fields size-bits=8 {
+            (uint)asic_rev_id @7:0
+        }
+    }
+
+    register AsicStatus {
+        address 0x11
+        access RO
+        reset-value 0x00
+
+        fields size-bits=8 {
+            (bool)i3c_err_3 @3
+            (bool)i3c_err_0 @2
+            (uint:HifMode)hif_mode @1:0 {
+                I2cOnlyMode
+                SpiMode1Mode2
+                SpiMode0Mode3
+                Autoconfig
+            }
+        }
+    }
+
+    register HostInterface {
+        address 0x13
+        access RW
+        reset-value 0b00110000
+
+        fields size-bits=8 {
+            // Pad drive strength for serial IO pins SDX, SDO (MSB should be set in I2C mode only) Note: these register fields should be read-back only after waiting at least 1¬μs after they have been written.
+            (uint)pad_if_drv @7:4
+            (bool)spi3_en @1
+            (bool)i2c_csb_pup_en @0
+        }
+    }
+
+    register InterruptConfig {
+        address 0x14
+        access RW
+        reset-value 0b00110101
+
+        fields size-bits=8 {
+            (uint)pad_drv_int @7:4
+            (bool)int_en @3
+            (uint:IntOd)int_od @2 {
+                PushPull
+                OpenDrain
+            }
+            (uint:IntPol)int_pol @1 {
+                ActiveLow
+                ActiveHigh
+            }
+            (uint:IntMode)int_mode @0 {
+                Pulsed
+                Latched
+            }
+        }
+    }
+
+    register IntSource {
+        address 0x15
+        access RW
+        reset-value 0x00
+
+        fields size-bits=8 {
+            (bool)oor_p_en @3
+            (bool)fifo_ths_en @2
+            (bool)fifo_full_en @1
+            (bool)drdy_data_reg_en @0
+        }
+    }
+
+    register FifoConfig {
+        address 0x16
+        access RW
+        reset-value 0x00
+
+        fields size-bits=8 {
+            (uint:FifoMode)fifo_mode @5 {
+                StreamToFifo
+                StopOnFull
+            }
+            (uint)FifoThreshold @4:0
+        }
+    }
+
+    register FifoFrames {
+        address 0x17
+        access RO
+        reset-value 0x00
+
+        fields size-bits=8 {
+            (uint)fifo_count @5:0
+        }
+    }
+
+    register FifoSelection {
+        address 0x18
+        access RW
+        reset-value 0x00
+
+        fields size-bits=8 {
+            (uint)fifo_dec_sel @4:2
+            (uint:FifoFrameSel)fifo_frame_sel @1:0 {
+                FifoNotEnabled
+                TemperatureData
+                PressureData
+                PressureAndTemperatureData
+            }
+        }
+    }
+
+    register Temperature {
+        address 0x1D
+        access RO
+        allow-address-overlap
+
+        fields size-bits=24 {
+            (uint)temperature @23:0
+        }
+    }
+
+    register Pressure {
+        address 0x20
+        access RO
+        allow-address-overlap
+
+        fields size-bits=24 {
+            (uint)pressure @23:0
+        }
+    }
+
+    register TemperaturePressure {
+        address 0x1D
+        access RO
+        allow-address-overlap
+
+        fields size-bits=48 {
+            (uint)temperature @23:0
+            (uint)pressure @47:24
+        }
+    }
+
+    register InterruptStatus {
+        address 0x27
+        access RO
+
+        fields size-bits=8 {
+            (bool)por @4
+            (bool)oor_p @3
+            (bool)fifo_ths @2
+            (bool)fifo_full @1
+            (bool)drdy_data_reg @0
+        }
+    }
+
+    register Status {
+        address 0x28
+        access RO
+
+        fields size-bits=8 {
+            (bool)nvm_cmd_err @3
+            (bool)nvm_rdy @1
+            (bool)nvm_err @2
+        }
+    }
+
+    register Fifo {
+        address 0x29
+        access RO
+
+        fields size-bits=8 {
+            (uint)data @7:0
+        }
+    }
+
+    register NvmAccess {
+        address 0x2B
+        access RW
+
+        fields size-bits=8 {
+            (bool)nvm_prog_en @6
+            (uint)nvm_row_address @5:0
+        }
+    }
+
+    register NvmData {
+        address 0x2C
+        access RW
+
+        fields size-bits=16 {
+            (uint)nvm_data @15:0
+        }
+    }
+
+    register DspConfig {
+        address 0x30
+        access RW
+        reset-value 0b00000011
+
+        fields size-bits=8 {
+            (uint:IirFilterOrder)oor_sel_iir_p @7
+            (uint:IirFilterOrder)fifo_sel_iir_p @6
+            (uint:IirFilterOrder)shdw_sel_iir_p @5
+            (uint:IirFilterOrder)fifo_sel_iir_t @4
+            (uint:IirFilterOrder)shdw_sel_iir_T @3
+            (bool)iir_flush_forced_en @2
+        }
+        
+    }
+
+    enum IirFilterOrder {
+        Before
+        After
+    }
+
+    register DspIirConfig {
+        address 0x31
+        access RW
+        reset-value 0x00
+
+        fields size-bits=8 {
+            (uint:IirCoefficient)set_iir_p @5:3
+            (uint:IirCoefficient)set_iir_t @2:0
+        }
+    }
+
+    enum IirCoefficient {
+        bypass
+        n_1
+        n_3
+        n_7
+        n_15
+        n_31
+        n_63
+        n_127
+    }
+
+    register OutOfRangeThreshPressure {
+        address 0x32
+        access RW
+
+        fields size-bits=16 {
+            (uint)thresh @15:0
+        }
+    }
+
+    register OutOfRangeRange {
+        address 0x34
+        access RW
+
+        fields size-bits=8 {
+            (uint)range @7:0
+        }
+    }
+
+    register OutOfRangeConfig {
+        address 0x35
+        access RW
+
+        fields size-bits=8 {
+            (uint:CntLim)cnt_lim @7:6 {
+                n_1
+                n_3
+                n_7
+                n_15
+            }
+            (uint)thresh_bit_15 @0
+        }
+    }
+
+    register OverSampleConfig {
+        address 0x36
+        access RW
+
+        fields size-bits=8 {
+            (bool)press_en @6
+            (uint:OversamplingRate)osr_p @5:3
+            (uint:OversamplingRate)osr_t @2:0
+        }
+    }
+
+    enum OversamplingRate {
+        n_1
+        n_2
+        n_4
+        n_8
+        n_16
+        n_32
+        n_64
+        n_128
+    }
+
+    register OdrConfig {
+        address 0x37
+        access RW
+        reset-value 0b01110000
+
+        fields size-bits=8 {
+            (bool)deep_dis @7
+            (uint:Odr)odr @6:2 {
+                MilliHz240_000
+                MilliHz218_537
+                MilliHz199_111
+                MilliHz179_200
+                MilliHz160_000
+                MilliHz149_333
+                MilliHz140_000
+                MilliHz129_855
+                MilliHz120_000
+                MilliHz110_164
+                MilliHz100_299
+                MilliHz89_600
+                MilliHz80_000
+                MilliHz70_000
+                MilliHz60_000
+                MilliHz50_056
+                MilliHz45_025
+                MilliHz40_000
+                MilliHz35_000
+                MilliHz30_000
+                MilliHz25_005
+                MilliHz20_000
+                MilliHz15_000
+                MilliHz10_000
+                MilliHz5_000
+                MilliHz4_000
+                MilliHz3_000
+                MilliHz2_000
+                MilliHz1_000
+                MilliHz0_500
+                MilliHz0_250
+                MilliHz0_125
+            }
+            (uint:PwrMode)pwr_mode @1:0 {
+                Standby
+                Normal
+                Forced
+                NonStop
+            }
+        }
+    }
+
+    register EffectiveOverSamplingRate {
+        address 0x38
+        access RO
+
+        fields size-bits=8 {
+            (bool)odr_is_valid @7
+            (uint:OversamplingRate)osr_p_eff @5:3
+            (uint:OversamplingRate)osr_t_eff @2:0
+        }
+    }
+
+    register Command {
+        address 0x7E
+        access WO
+
+        fields size-bits=8 {
+            (uint)cmd @7:0
+        }
+    }
+}

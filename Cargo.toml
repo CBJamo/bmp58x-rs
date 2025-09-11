@@ -1,0 +1,16 @@
+[package]
+name = "bmp58x-rs"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+embedded-hal = "1"
+embedded-hal-async = "1"
+defmt = { version = "1", optional = true }
+device-driver = { version = "1", git = "https://github.com/diondokter/device-driver.git" }
+
+[features]
+default = ["defmt"]
+defmt = ["dep:defmt", "device-driver/defmt"]
+
+[patch.crates-io]

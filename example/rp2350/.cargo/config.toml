@@ -1,0 +1,12 @@
+[target.'cfg(all(target_arch = "arm", target_os = "none"))']
+runner = "probe-rs run --chip RP235x"
+#runner = "picotool load -u -v -x -t elf"
+
+[build]
+target = "thumbv8m.main-none-eabihf"
+
+[net]
+git-fetch-with-cli = true
+
+[env]
+DEFMT_LOG = "debug"
