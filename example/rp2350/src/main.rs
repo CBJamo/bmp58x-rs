@@ -7,7 +7,7 @@ use embassy_embedded_hal::shared_bus::asynch::i2c::I2cDevice;
 use embassy_executor::Spawner;
 use embassy_rp::{bind_interrupts, gpio, i2c, peripherals};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
-use embassy_time::{Delay, Duration, Ticker, Timer};
+use embassy_time::{Delay, Timer};
 use static_cell::StaticCell;
 
 use {defmt_rtt as _, panic_probe as _};
