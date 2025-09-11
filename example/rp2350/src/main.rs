@@ -1,13 +1,13 @@
 #![no_std]
 #![no_main]
 
-use bmp58x_rs::{AddressSdo, Config, Odr, OversamplingRate};
+use bmp58x_rs::{AddressSdo, Config, Mode, low_level::OversamplingRate};
 use defmt::*;
 use embassy_embedded_hal::shared_bus::asynch::i2c::I2cDevice;
 use embassy_executor::Spawner;
 use embassy_rp::{bind_interrupts, gpio, i2c, peripherals};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
-use embassy_time::{Delay, Duration, Instant, Ticker, Timer, block_for};
+use embassy_time::{Delay, Duration, Ticker, Timer};
 use static_cell::StaticCell;
 
 use {defmt_rtt as _, panic_probe as _};
@@ -33,25 +33,39 @@ async fn main(_spawner: Spawner) {
 
     let p = embassy_rp::init(Default::default());
 
-    let i2c = i2c::I2c::new_async(p.I2C1, p.PIN_3, p.PIN_2, Irqs, Default::default());
+    let mut config = i2c::Config::default();
+    config.frequency = 1_000_000;
+
+    let i2c = i2c::I2c::new_async(p.I2C1, p.PIN_3, p.PIN_2, Irqs, config);
     let i2c = I2C_BUS.init(Mutex::<CriticalSectionRawMutex, _>::new(i2c));
 
     let mut bmp = Bmp::new(
         I2cDevice::new(i2c),
         Some(gpio::Input::new(p.PIN_12, gpio::Pull::Up)),
-        //None,
         Delay,
         AddressSdo::High,
     );
 
     info!("{:X}", bmp.get_uid().await);
 
-    bmp.init(&Config::standard(Odr::MilliHz1000)).await.unwrap();
+    let config = Config {
+        mode: Mode::Continous,
+        pressure_oversample: OversamplingRate::N128,
+        temperature_oversample: OversamplingRate::N8,
+    };
+
+    while let Err(e) = bmp.init(&config).await {
+        warn!("bmp init error:{}", e);
+        Timer::after_millis(100).await;
+    }
 
     let mut led = gpio::Output::new(p.PIN_25, gpio::Level::Low);
 
     loop {
         led.toggle();
-        info!("{}", bmp.wait_sample().await);
+
+        if let Ok(samp) = bmp.get_sample().await {
+            info!("{} C {} Pa", samp.0, samp.1);
+        }
     }
 }

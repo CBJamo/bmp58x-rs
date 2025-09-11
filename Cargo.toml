@@ -12,5 +12,3 @@ device-driver = { version = "1", git = "https://github.com/diondokter/device-dri
 [features]
 default = ["defmt"]
 defmt = ["dep:defmt", "device-driver/defmt"]
-
-[patch.crates-io]
