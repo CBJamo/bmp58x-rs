@@ -7,7 +7,7 @@ edition = "2024"
 embedded-hal = "1"
 embedded-hal-async = "1"
 defmt = { version = "1", optional = true }
-device-driver = { version = "1", git = "https://github.com/diondokter/device-driver.git" }
+device-driver = { version = "1", git = "https://github.com/diondokter/device-driver.git", rev = "6b56bec8c2747fbfe80119c2d8a09c33c436d3f1" }
 
 [features]
 default = ["defmt"]
